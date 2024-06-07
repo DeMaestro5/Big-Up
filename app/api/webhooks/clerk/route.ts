@@ -1,11 +1,14 @@
 /* eslint-disable camelcase */
-import { NextRequest, NextResponse } from 'next/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import { WebhookEvent } from '@clerk/nextjs/server';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { clerkClient } from '@clerk/clerk-sdk-node';
+
 import { createUser, deleteUser, updateUser } from '@/lib/actions/user.actions';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
@@ -14,23 +17,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const svix_id = req.headers.get('svix-id');
-  const svix_timestamp = req.headers.get('svix-timestamp');
-  const svix_signature = req.headers.get('svix-signature');
+  // Get the headers
+  const headerPayload = headers();
+  const svix_id = headerPayload.get('svix-id');
+  const svix_timestamp = headerPayload.get('svix-timestamp');
+  const svix_signature = headerPayload.get('svix-signature');
 
+  // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new NextResponse('Error occurred -- no svix headers', {
+    return new Response('Error occured -- no svix headers', {
       status: 400,
     });
   }
 
+  // Get the body
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
+  // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
 
   let evt: WebhookEvent;
 
+  // Verify the payload with the headers
   try {
     evt = wh.verify(body, {
       'svix-id': svix_id,
@@ -39,23 +48,18 @@ export async function POST(req: NextRequest) {
     }) as WebhookEvent;
   } catch (err) {
     console.error('Error verifying webhook:', err);
-    return new NextResponse('Error occurred', {
+    return new Response('Error occured', {
       status: 400,
     });
   }
 
+  // Get the ID and type
   const { id } = evt.data;
   const eventType = evt.type;
 
-  if (id === undefined) {
-    console.error('Webhook event data does not contain an ID');
-    return new NextResponse('Error occurred -- no ID in webhook event data', {
-      status: 400,
-    });
-  }
-
+  // CREATE
   if (eventType === 'user.created') {
-    const { email_addresses, image_url, first_name, last_name, username } =
+    const { id, email_addresses, image_url, first_name, last_name, username } =
       evt.data;
 
     const user = {
@@ -69,8 +73,9 @@ export async function POST(req: NextRequest) {
 
     const newUser = await createUser(user);
 
+    // Set public metadata
     if (newUser) {
-      await clerkClient.users.updateUser(id, {
+      await clerkClient.users.updateUserMetadata(id, {
         publicMetadata: {
           userId: newUser._id,
         },
@@ -80,8 +85,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'OK', user: newUser });
   }
 
+  // UPDATE
   if (eventType === 'user.updated') {
-    const { image_url, first_name, last_name, username } = evt.data;
+    const { id, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
       firstName: first_name || '',
@@ -95,14 +101,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'OK', user: updatedUser });
   }
 
+  // DELETE
   if (eventType === 'user.deleted') {
-    const deletedUser = await deleteUser(id);
+    const { id } = evt.data;
+
+    const deletedUser = await deleteUser(id!);
 
     return NextResponse.json({ message: 'OK', user: deletedUser });
   }
 
-  console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
+  console.log(`Webhook with and ID of ${id} and type of ${eventType}`);
   console.log('Webhook body:', body);
 
-  return new NextResponse('', { status: 200 });
+  return new Response('', { status: 200 });
 }
