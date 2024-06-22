@@ -1,32 +1,36 @@
-import { Schema, model, models, Types } from 'mongoose';
+import { Document, Schema, model, models } from 'mongoose';
 
-interface IImage extends Document {
+export interface IImage extends Document {
   title: string;
   transformationType: string;
   publicID: string;
-  securedUrl: URL;
+  securedUrl: string;
   width?: number;
   height?: number;
   config?: object;
-  transformationUrl?: URL;
+  transformationUrl?: string;
   aspectRatio?: string;
   color?: string;
   prompt?: string;
-  author: { _id: String; FirstName: String; LastName: String };
-  createdAt: Date;
-  updatedAt: Date;
+  author: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const ImageSchema = new Schema({
   title: { type: String, required: true },
   transformationType: { type: String, required: true },
   publicID: { type: String, required: true },
-  securedUrl: { type: URL, required: true },
+  securedUrl: { type: String, required: true },
   width: { type: Number },
   height: { type: Number },
   config: { type: Object },
-  transformationUrl: { type: URL },
-  aspectRation: { type: String },
+  transformationUrl: { type: String },
+  aspectRatio: { type: String },
   color: { type: String },
   prompt: { type: String },
   author: { type: Schema.Types.ObjectId, ref: 'User' },

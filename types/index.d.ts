@@ -21,12 +21,12 @@ declare type UpdateUserParams = {
 declare type AddImageParams = {
   image: {
     title: string;
-    publicId: string;
+    publicID: string;
     transformationType: string;
     width: number;
     height: number;
     config: any;
-    secureURL: string;
+    securedUrl: string;
     transformationURL: string;
     aspectRatio: string | undefined;
     prompt: string | undefined;
@@ -40,12 +40,12 @@ declare type UpdateImageParams = {
   image: {
     _id: string;
     title: string;
-    publicId: string;
+    publicID: string;
     transformationType: string;
     width: number;
     height: number;
     config: any;
-    secureURL: string;
+    securedUrl: string;
     transformationURL: string;
     aspectRatio: string | undefined;
     prompt: string | undefined;
