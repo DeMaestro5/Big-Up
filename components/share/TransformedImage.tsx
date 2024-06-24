@@ -1,10 +1,10 @@
 'use client';
 
-import { dataUrl, debounce, getImageSize } from '@/lib/utils';
-import { CldImage } from 'next-cloudinary';
+import { dataUrl, debounce, download, getImageSize } from '@/lib/utils';
+import { CldImage, getCldImageUrl } from 'next-cloudinary';
 import { PlaceholderValue } from 'next/dist/shared/lib/get-img-props';
 import Image from 'next/image';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const TransformedImage = ({
   image,
@@ -15,7 +15,47 @@ const TransformedImage = ({
   transformationConfig,
   hasDownload = false,
 }: TransformedImageProps) => {
-  const downloadHandler = () => {};
+  console.log({
+    image,
+    title,
+    type,
+    isTransforming,
+    setIsTransforming,
+    transformationConfig,
+    hasDownload,
+  });
+  // Todo: come back to fix download handler
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (image?.publicId && transformationConfig) {
+      try {
+        const url = getCldImageUrl({
+          width: image.width,
+          height: image.height,
+          src: image.publicId,
+          ...transformationConfig,
+        });
+        setImageUrl(url);
+      } catch (error) {
+        console.error('Error generating Cloudinary URL:', error);
+      }
+    }
+  }, [image, transformationConfig]);
+  const downloadHandler = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    download(
+      getCldImageUrl({
+        width: image?.width,
+        height: image?.height,
+        src: image?.publicId,
+        ...transformationConfig,
+      }),
+      title
+    );
+  };
 
   return (
     <div className='flex flex-col gap-4'>
@@ -51,7 +91,7 @@ const TransformedImage = ({
                 {
                   setIsTransforming && setIsTransforming(false);
                 }
-              }, 8000);
+              }, 8000)();
             }}
             {...transformationConfig}
           />
@@ -63,6 +103,7 @@ const TransformedImage = ({
                 height={50}
                 alt='transforming'
               />
+              <p className='text-white/80'>Please wait ...</p>
             </div>
           )}
         </div>

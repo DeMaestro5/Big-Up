@@ -10,7 +10,7 @@ const Home = async ({ searchParams }: SearchParamProps) => {
   const searchQuery = (searchParams?.query as string) || '';
   const images = await getAllImages({ searchQuery, page });
   return (
-    <div className='flex flex-col items-center justify-center min-h-screen p-4'>
+    <>
       <SignedIn>
         <div className='m-20'>
           <section className='home'>
@@ -47,7 +47,7 @@ const Home = async ({ searchParams }: SearchParamProps) => {
       <SignedOut>
         <SignInButton />
       </SignedOut>
-    </div>
+    </>
   );
 };
 

@@ -7,18 +7,18 @@ import TransformedImage from '@/components/share/TransformedImage';
 import { Button } from '@/components/ui/button';
 import { getImageById } from '@/lib/actions/image.actions';
 import { getImageSize } from '@/lib/utils';
-import { useState } from 'react';
-// import { DeleteConfirmation } from '@/components/shared/DeleteConfirmation';
+import { DeleteConfirmation } from '@/components/share/DeleteConfirmation';
 
 const ImageDetails = async ({ params: { id } }: SearchParamProps) => {
-  const { userId } = auth();
+  const authResult = auth();
+
+  const { userId } = authResult;
 
   const image = await getImageById(id);
-  console.log('image', image);
 
   return (
     <>
-      <Header title={image.title} subtitle={image.subtitle} />
+      <Header title={image.title} />
 
       <section className='mt-5 flex flex-wrap gap-4'>
         <div className='p-14-medium md:p-16-medium flex gap-2'>
@@ -75,17 +75,18 @@ const ImageDetails = async ({ params: { id } }: SearchParamProps) => {
           </div>
 
           {/* TRANSFORMED IMAGE */}
+
           <TransformedImage
             image={image}
-            title={image.title}
             type={image.transformationType}
+            title={image.title}
             isTransforming={false}
             transformationConfig={image.config}
             hasDownload={true}
           />
         </div>
 
-        {/* {userId === image.author.clerkId && (
+        {userId === image.author.clerkId && (
           <div className='mt-4 space-y-4'>
             <Button asChild type='button' className='submit-button capitalize'>
               <Link href={`/transformations/${image._id}/update`}>
@@ -95,7 +96,7 @@ const ImageDetails = async ({ params: { id } }: SearchParamProps) => {
 
             <DeleteConfirmation imageId={image._id} />
           </div>
-        )} */}
+        )}
       </section>
     </>
   );

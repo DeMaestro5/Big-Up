@@ -86,6 +86,7 @@ const TransformationForm = ({
         src: image?.publicId,
         ...transformationConfig,
       });
+      console.log('image', image);
 
       const imageData = {
         title: values.title,

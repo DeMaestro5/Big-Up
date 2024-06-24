@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Header = ({ title, subtitle }: { title: String; subtitle: String }) => {
+const Header = ({ title, subtitle }: { title: String; subtitle?: String }) => {
   return (
     <div>
       <h2 className='text-2xl lg:text-4xl md:text-3xl text-dark-600 font-bold'>
