@@ -134,5 +134,6 @@ declare type TransformedImageProps = {
   transformationConfig: Transformations | null;
   isTransforming: boolean;
   hasDownload?: boolean;
+  setTransformedImageId: any;
   setIsTransforming?: React.Dispatch<React.SetStateAction<boolean>>;
 };

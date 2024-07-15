@@ -15,21 +15,23 @@ const populateUser = (query: any) =>
     model: User,
     select: '_id firstName lastName clerkId',
   });
-//Add Image
 
+// ADD IMAGE
 export async function AddImage({ image, userId, path }: AddImageParams) {
   try {
     await connectToDatabase();
+
     const author = await User.findById(userId);
 
     if (!author) {
-      throw new Error('user not found');
+      throw new Error('User not found');
     }
 
     const newImage = await Image.create({
       ...image,
       author: author._id,
     });
+
     revalidatePath(path);
 
     return JSON.parse(JSON.stringify(newImage));
@@ -38,12 +40,12 @@ export async function AddImage({ image, userId, path }: AddImageParams) {
   }
 }
 
-//Update Image
+// UPDATE IMAGE
 export async function UpdateImage({ image, userId, path }: UpdateImageParams) {
   try {
     await connectToDatabase();
 
-    const imageToUpdate = await User.findByIdAndUpdate(userId);
+    const imageToUpdate = await Image.findById(image._id);
 
     if (!imageToUpdate || imageToUpdate.author.toHexString() !== userId) {
       throw new Error('Unauthorized or image not found');
@@ -54,6 +56,7 @@ export async function UpdateImage({ image, userId, path }: UpdateImageParams) {
       image,
       { new: true }
     );
+
     revalidatePath(path);
 
     return JSON.parse(JSON.stringify(updatedImage));
@@ -62,8 +65,8 @@ export async function UpdateImage({ image, userId, path }: UpdateImageParams) {
   }
 }
 
-//Delete Image
-export async function DeleteImage(imageId: string) {
+// DELETE IMAGE
+export async function deleteImage(imageId: string) {
   try {
     await connectToDatabase();
 
@@ -75,16 +78,14 @@ export async function DeleteImage(imageId: string) {
   }
 }
 
-//Get Image
+// GET IMAGE
 export async function getImageById(imageId: string) {
   try {
     await connectToDatabase();
 
     const image = await populateUser(Image.findById(imageId));
 
-    if (!image) {
-      throw new Error('Image not found');
-    }
+    if (!image) throw new Error('Image not found');
 
     return JSON.parse(JSON.stringify(image));
   } catch (error) {
@@ -92,8 +93,7 @@ export async function getImageById(imageId: string) {
   }
 }
 
-// Get all images
-
+// GET IMAGES
 export async function getAllImages({
   limit = 9,
   page = 1,
@@ -104,7 +104,7 @@ export async function getAllImages({
   searchQuery?: string;
 }) {
   try {
-    connectToDatabase();
+    await connectToDatabase();
 
     cloudinary.config({
       cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -116,21 +116,21 @@ export async function getAllImages({
     let expression = 'folder=imaginify';
 
     if (searchQuery) {
-      expression += `AND ${searchQuery}`;
+      expression += ` AND ${searchQuery}`;
     }
 
     const { resources } = await cloudinary.search
       .expression(expression)
       .execute();
 
-    const resourcesId = resources.map((resource: any) => resource.public_id);
+    const resourceIds = resources.map((resource: any) => resource.public_id);
 
     let query = {};
 
     if (searchQuery) {
       query = {
-        public_id: {
-          $in: resourcesId,
+        publicId: {
+          $in: resourceIds,
         },
       };
     }
@@ -147,8 +147,39 @@ export async function getAllImages({
 
     return {
       data: JSON.parse(JSON.stringify(images)),
-      totalPages: Math.ceil(totalImages / limit),
+      totalPage: Math.ceil(totalImages / limit),
       savedImages,
+    };
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+// GET IMAGES BY USER
+export async function getUserImages({
+  limit = 9,
+  page = 1,
+  userId,
+}: {
+  limit?: number;
+  page: number;
+  userId: string;
+}) {
+  try {
+    await connectToDatabase();
+
+    const skipAmount = (Number(page) - 1) * limit;
+
+    const images = await populateUser(Image.find({ author: userId }))
+      .sort({ updatedAt: -1 })
+      .skip(skipAmount)
+      .limit(limit);
+
+    const totalImages = await Image.find({ author: userId }).countDocuments();
+
+    return {
+      data: JSON.parse(JSON.stringify(images)),
+      totalPages: Math.ceil(totalImages / limit),
     };
   } catch (error) {
     handleError(error);
