@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { DeleteImage } from '@/lib/actions/image.actions';
+import { deleteImage } from '@/lib/actions/image.actions';
 
 import { Button } from '../ui/button';
 
@@ -48,7 +48,7 @@ export const DeleteConfirmation = ({ imageId }: { imageId: string }) => {
             className='border bg-red-500 text-white hover:bg-red-600'
             onClick={() =>
               startTransition(async () => {
-                await DeleteImage(imageId);
+                await deleteImage(imageId);
               })
             }
           >
